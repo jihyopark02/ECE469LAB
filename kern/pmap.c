@@ -102,23 +102,22 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
+	char* new_nextfree = nextfree + n;
     
-	if(n > 0) {
-		result = nextfree;
-		nextfree = nextfree + n;
-		// nextfree is a virtual address, change it to physical address
-		// do npages * PGSIZE
-		if(PADDR(nextfree) > (npages * PGSIZE)) {
-			panic("Out of Memory!\n");
-		}
+	if(n != 0) {
+		if (PADDR((uintptr_t*) new_nextfree) / PGSIZE < npages) {
+			result = nextfree;
+			nextfree += n;
+			nextfree = ROUNDUP(nextfree, PGSIZE);
 
-		return result;
+			return result;
+		} else {
+			panic("Boot alloc failed");
+		}
 	}
-	else if(n == 0) {
+	else {
 		return nextfree;
 	}
-
-	return nextfree;
 }
 
 // Set up a two-level page table:
@@ -166,7 +165,7 @@ mem_init(void)
 
 	n = ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE);
 	pages = boot_alloc(n);
-	memset(pages, 0, PGSIZE);
+	memset(pages, 0, n);
 	/*pages = (struct PageInfo*) boot_alloc(sizeof(struct PageInfo) * npages);
 	memset(pages, 0, sizeof(struct PageInfo) * npages);*/
 
@@ -390,46 +389,29 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
-    pde_t pde = pgdir[PDX(va)];
+	pde_t pde = pgdir[PDX(va)];
+	uintptr_t temp = (uintptr_t) va;
 
-    if (PTE_P & pde) {
-        return (pte_t*)(KADDR(PTE_ADDR(pde))) + PTX(va);
-    } else if (create) {
-        struct PageInfo *page = page_alloc(ALLOC_ZERO);
-        if (page == NULL) {
-            return NULL;
-        }
+	if (!(PTE_P & pde)) {
+		if (create == false) {
+			return NULL;
+		}
 
-        page -> pp_ref = page -> pp_ref + 1;
-        pde = page2pa(page) | PTE_P | PTE_U | PTE_W;
-        return (pte_t*)(KADDR(PTE_ADDR(pde))) + PTX(va);
-    } else {
-        return NULL;
-    }
-
-    /*
-	pde_t *pde_entry = (pde_t*) (pgdir + PDX(va));
-	pde_t page_dir = pgdir[PDX(va)];
-
-	if (PTE_P & (*pde_entry == 0) && create == false) {
-		return NULL;
-	} else if (PTE_P & (*pde_entry == 0)) {
-		struct PageInfo *page = page_alloc(ALLOC_ZERO);
-
+		struct PageInfo* page = page_alloc(ALLOC_ZERO);
 		if (page == NULL) {
 			return NULL;
 		}
 
-		page -> pp_ref = page -> pp_ref + 1;
-		// Slide 8 (memory)
-		*pde_entry = page2pa(page) | PTE_P | PTE_U | PTE_W;
+		page -> pp_ref++;
+		pde = page2pa(page) | PTE_P | PTE_U | PTE_W;
+		pgdir[PDX(temp)] = pde;
 	}
 
-	uintptr_t addr_offset = PTX(va);
-	pte_t *page_table = KADDR(PTE_ADDR(page_dir));
+	physaddr_t pt_phys_addr = PTE_ADDR(pde);
+	pde_t* pt_virtual_addr = KADDR(pt_phys_addr);
+	pte_t* pte = &pt_virtual_addr[PTX(temp)];
 
-	return &page_table[addr_offset];
-    */
+	return pte;
 }
 
 //
@@ -519,13 +501,13 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	// Fill this function in
     pte_t *pte = pgdir_walk(pgdir, va, 0);
 
-    if (!(PTE_P & *pte) || pte == NULL) {
-        return NULL;
-    }
+	if (*pte_store != NULL) {
+		*pte_store = pte;
+	}
 
-    if (pte_store) {
-        *pte_store = pte;
-    }
+	if (pte == NULL) {
+		return NULL;
+	}
 
     struct PageInfo *mapped_page = pa2page(PTE_ADDR(*pte));
 
