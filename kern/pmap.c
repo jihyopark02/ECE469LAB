@@ -193,11 +193,10 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-	int perm = PTE_U | PTE_P; // read only
-	int perm2 = PTE_P | PTE_W; // RW
-
-	boot_map_region(kern_pgdir, UPAGES, PGSIZE, PADDR(pages), perm);
-	boot_map_region(kern_pgdir, UPAGES, PGSIZE, PADDR(pages), perm2);
+	int perm = PTE_P; // read only
+	
+	boot_map_region(kern_pgdir, UPAGES, sizeof(struct PageInfo) * npages, PADDR(pages), perm);
+	//boot_map_region(kern_pgdir, (uintptr_t) page2kva(pages), PGSIZE, PADDR(pages), perm2);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -210,7 +209,9 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	int perm2 = PTE_W; // RW
 
+	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), perm2);
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
 	// Ie.  the VA range [KERNBASE, 2^32) should map to
@@ -219,7 +220,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-
+	boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, 0, perm2);
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
 
@@ -972,3 +973,9 @@ check_page_installed_pgdir(void)
 
 	cprintf("check_page_installed_pgdir() succeeded!\n");
 }
+
+// we go through a page table
+// we have a range of virtual addresses
+// go through the virtual addresses and check the physical address of them
+// and you will get the permission bits out of the physical address and ur done
+
