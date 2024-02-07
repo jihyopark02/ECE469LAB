@@ -102,7 +102,7 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
-
+    
 	if(n > 0) {
 		result = nextfree;
 		nextfree = nextfree + n;
@@ -390,7 +390,24 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
+    pde_t pde = pgdir[PDX(va)];
 
+    if (PTE_P & pde) {
+        return (pte_t*)(KADDR(PTE_ADDR(pde))) + PTX(va);
+    } else if (create) {
+        struct PageInfo *page = page_alloc(ALLOC_ZERO);
+        if (page == NULL) {
+            return NULL;
+        }
+
+        page -> pp_ref = page -> pp_ref + 1;
+        pde = page2pa(page) | PTE_P | PTE_U | PTE_W;
+        return (pte_t*)(KADDR(PTE_ADDR(pde))) + PTX(va);
+    } else {
+        return NULL;
+    }
+
+    /*
 	pde_t *pde_entry = (pde_t*) (pgdir + PDX(va));
 	pde_t page_dir = pgdir[PDX(va)];
 
@@ -412,6 +429,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	pte_t *page_table = KADDR(PTE_ADDR(page_dir));
 
 	return &page_table[addr_offset];
+    */
 }
 
 //
@@ -429,7 +447,7 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
-	pte_t *pte;
+    pte_t *pte;
 	
 	size_t i;
 	for (i = 0; i < size; i += PGSIZE) {
@@ -473,9 +491,9 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
         return -E_NO_MEM;
     }
 
-    pp -> pp_ref = pp -> pp_ref + 1;
+    pp -> pp_ref++;
 
-    if ((*pte & PTE_P) != 0) {
+    if (PTE_P & *pte) {
         page_remove(pgdir, va);
     }
 
