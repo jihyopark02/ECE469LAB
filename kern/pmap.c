@@ -289,12 +289,12 @@ page_init(void)
 	uint32_t free_phys_addr = PADDR(boot_alloc(0));
 	int free_phys_addr_idx = free_phys_addr / PGSIZE;
 
-	for (i = npages_basemem; i < free_phys_addr_idx; ++i) {
+	for (i = npages_basemem; i < free_phys_addr_idx; i++) {
 		pages[i].pp_ref = 1;
 		pages[i].pp_link = NULL;
 	}
 
-	for (i = free_phys_addr_idx; i < npages; ++i) {
+	for (i = free_phys_addr_idx; i < npages; i++) {
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
@@ -324,7 +324,7 @@ page_alloc(int alloc_flags)
 	}
 
 	if(alloc_flags & ALLOC_ZERO) {
-		memset(page2kva(page), 0, PGSIZE);
+		memset(page2kva(page), '\0', PGSIZE);
 	}
 
 	page_free_list = page -> pp_link;
@@ -344,10 +344,9 @@ page_free(struct PageInfo *pp)
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
 	if(pp -> pp_ref != 0) {
-		panic("OH GOD");
-	}
-	else if(pp -> pp_link != NULL) {
-		panic("OH MY GOD");
+		panic("pp_ref is nonzero!");
+	} else if(pp -> pp_link != NULL) {
+		panic("pp_link is not NULL!");
 	}
 
 	pp -> pp_link = page_free_list;
@@ -391,7 +390,27 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
-	return NULL;
+	pde_t *pde_entry = (pde_t*) (pgdir + PDX(va));
+	pde_t page_dir = pgdir[PDX(va)];
+
+	if (((PTE_P & *pde_entry) == 0) && create == false) {
+		return NULL;
+	} else if (((PTE_P & *pde_entry) == 0)) {
+		struct PageInfo *page = page_alloc(1);
+
+		if (page == NULL) {
+			return NULL;
+		}
+
+		page -> pp_ref = page -> pp_ref + 1;
+		// Slide 8 (memory)
+		*pde_entry = page2pa(page) | PTE_P | PTE_U | PTE_W;
+	}
+
+	uintptr_t addr_offset = PTX(va);
+	pte_t *page_table = KADDR(PTE_ADDR(page_dir));
+
+	return &page_table[addr_offset];
 }
 
 //
@@ -409,6 +428,13 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+	pte_t* ret_addr;
+	size_t num_pages = size / PGSIZE;
+	
+	size_t i;
+	for (i = 0; i < num_pages; i++) {
+
+	}
 }
 
 //
