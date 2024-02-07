@@ -390,6 +390,7 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
+
 	pde_t *pde_entry = (pde_t*) (pgdir + PDX(va));
 	pde_t page_dir = pgdir[PDX(va)];
 
@@ -500,11 +501,11 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	// Fill this function in
     pte_t *pte = pgdir_walk(pgdir, va, 0);
 
-    if ((*pte & PTE_P) == 0 || pte == NULL) {
+    if (!(PTE_P & *pte) || pte == NULL) {
         return NULL;
     }
 
-    if (pte_store != NULL) {
+    if (pte_store) {
         *pte_store = pte;
     }
 
