@@ -518,6 +518,16 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
+    pte_t *pte;
+
+    struct PageInfo *page = page_lookup(pgdir, va, &pte);
+
+    if (page == NULL) {
+        return;
+    }
+
+    page_decref(page);
+    *pte = 0;
 }
 
 //
