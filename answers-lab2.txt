@@ -6,7 +6,7 @@ a. What entries (rows) in the page directory have been filled in at this point?
    +=====+======================+=======================================+
    |1023 | 0xFFC00000           | Page table for top 4MB of phys memory |
    +-----+----------------------+---------------------------------------+
-   |1022 | 0xFF800000           | Page table for top 8MB of phys memory |
+   |1022 | 0xFF800000           | NULL/FREE                             |
    +-----+----------------------+---------------------------------------+
    |960  | 0xf0000000           | KERNBASE, KSTACKTOP                   |
    +-----+----------------------+---------------------------------------+
@@ -33,8 +33,8 @@ b. We have placed the kernel and user environment in the same address space.
    only their allocated virtual memory.
 
 c. What is the maximum amount of physical memory that this operating system can support? Why?
-   Since J OS is a 32-bit operating system, it can support a maximum of 4 GB physical memory.
-   This is because 2^32 bytes is equal to 4 GB.
+   The maximum amount of physical memory that this operating system can support is 256 MB
+   because of the design limitations of JOS.
 
 d. How much space overhead is there for managing memory, if we actually had the maximum amount of physical memory? 
    How is this overhead broken down?

@@ -245,7 +245,7 @@ mem_init(void)
 	// Some more checks, only possible after kern_pgdir is installed.
 	check_page_installed_pgdir();
 
-	// Written Questions 1A
+	// Written Questions 1
 	//cprintf("Entry 1023: 0x%x\n", PTE_ADDR(*pgdir_walk(kern_pgdir, (const void *)(uintptr_t) 0xFFC00000, 0)));
 	//extern char end[];
 	//cprintf("%x\n", ROUNDUP((char *) end, PGSIZE));
