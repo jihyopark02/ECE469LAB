@@ -244,6 +244,22 @@ mem_init(void)
 
 	// Some more checks, only possible after kern_pgdir is installed.
 	check_page_installed_pgdir();
+
+	// Written Questions 1A
+	//cprintf("Entry 1023: 0x%x\n", PTE_ADDR(*pgdir_walk(kern_pgdir, (const void *)(uintptr_t) 0xFFC00000, 0)));
+	//extern char end[];
+	//cprintf("%x\n", ROUNDUP((char *) end, PGSIZE));
+	//cprintf("%x %x\n", PADDR(pages), PADDR(pages + npages));
+
+	cprintf("UTEMP Entry: %d\n", PDX(0x00400000));
+	cprintf("UTEXT Entry: %d\n", PDX(0x00800000));
+	cprintf("USTACKTOP Entry: %d\n", PDX(0xeebfe000));
+	cprintf("UPAGES Entry: %d\n", PDX(0xef000000));
+	cprintf("UVPT Entry: %d\n", PDX(0xef400000));
+	cprintf("ULIM Entry: %d\n", PDX(0xef800000));
+	cprintf("KERNBASE, KSTACKTOP Entry: %d\n", PDX(0xf0000000));
+	cprintf("Page Table Top 8 MB Entry: %d\n", PDX(0xff800000));
+	cprintf("Page Table Top 4 MB Entry: %d\n", PDX(0xffc00000));
 }
 
 // --------------------------------------------------------------

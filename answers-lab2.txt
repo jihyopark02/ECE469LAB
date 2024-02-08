@@ -4,28 +4,37 @@ a. What entries (rows) in the page directory have been filled in at this point?
    +-----+----------------------+---------------------------------------+
    |Entry| Base Virtual Address |  Points to (logically)                |
    +=====+======================+=======================================+
-   |1023 | ?                    | Page table for top 4MB of phys memory |
+   |1023 | 0xFFC00000           | Page table for top 4MB of phys memory |
    +-----+----------------------+---------------------------------------+
-   |1022 | ?                    | ?                                     |
+   |1022 | 0xFF800000           | Page table for top 8MB of phys memory |
    +-----+----------------------+---------------------------------------+
-   |.    | ?                    | ?                                     |
+   |960  | 0xf0000000           | KERNBASE, KSTACKTOP                   |
    +-----+----------------------+---------------------------------------+
-   |.    | ?                    | ?                                     |
+   |958  | 0xef800000           | ULIM, MMIOBASE                        |
    +-----+----------------------+---------------------------------------+
-   |.    | ?                    | ?                                     |
+   |957  | 0xef400000           | UPVT                                  |
    +-----+----------------------+---------------------------------------+
-   |2    | 0x00800000           | ?                                     |
+   |956  | 0xef000000           | UPAGES                                |
    +-----+----------------------+---------------------------------------+
-   |1    | 0x00400000           | ?                                     |
+   |954  | 0xeebfe000           | USTACKTOP                             |
    +-----+----------------------+---------------------------------------+
-   |0    | 0x00000000           | [see next question]                   |
+   |2    | 0x00800000           | UTEXT                                 |
+   +-----+----------------------+---------------------------------------+
+   |1    | 0x00400000           | UTEMP                                 |
+   +-----+----------------------+---------------------------------------+
+   |0    | 0x00000000           | Empty Memory                          |
    +-----+----------------------+---------------------------------------+
 
 b. We have placed the kernel and user environment in the same address space. 
    Why will user programs not be able to read or write the kernel’s memory? 
    What specific mechanisms protect the kernel memory?
+   Answer: User programs will not be able to read or write the kernel's memory
+   because the memory management unit (MMU) ensures that user programs access
+   only their allocated virtual memory.
 
 c. What is the maximum amount of physical memory that this operating system can support? Why?
+   Since J OS is a 32-bit operating system, it can support a maximum of 4 GB physical memory.
+   This is because 2^32 bytes is equal to 4 GB.
 
 d. How much space overhead is there for managing memory, if we actually had the maximum amount of physical memory? 
    How is this overhead broken down?
