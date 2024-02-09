@@ -60,7 +60,9 @@ e. Revisit the page table setup in kern/entry.S and kern/entrypgdir.c.
    What makes it possible for us to continue executing at a low EIP between when we enable paging 
    and when we begin running at an EIP above KERNBASE? Why is this transition necessary?
    Answer:
-   We transition to running at an EIP above KERNBASE when we boot up the computer. We would jump to KERNBASE + 1MB.
+   We transition to running at an EIP above KERNBASE when we boot up the computer. We jump to KERNBASE + 1MB
+   because we do not have the virtual addresses set up; we have to run from the physical addresses the boot loader
+   loaded the kernel at.
 
    It is still possible for us to continue executing at a low EIP because after we boot up, 
    we do not have virtual address set up, so we would set up a trivial page directory that 
