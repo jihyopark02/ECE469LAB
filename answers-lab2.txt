@@ -45,6 +45,8 @@ d. How much space overhead is there for managing memory, if we actually had the 
    Answer: 
    Page Directory: 4 KB
    Page Table: 4 MB
+   Assuming 4 GB of memory, the overhead would be 4 KB + 4 MB.
+   Calculations for 256 MB of memory:
    1 GB = 1024 MB
    1024 MB / 256 MB = 0.25 GB
    4 GB / 0.25 GB = 16
