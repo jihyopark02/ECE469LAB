@@ -185,6 +185,13 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
+	// TA tips:
+	// e should be set to allocated page
+	// Addresses above UTOP should be identical
+	// Copy kernel page directory entries to environment page directory entries (above UTOP)
+	e -> env_pgdir = page2kva(p);
+	memcpy(e -> env_pgdir, kern_pgdir, PGSIZE);
+	p -> pp_ref++;
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
