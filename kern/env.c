@@ -287,11 +287,11 @@ region_alloc(struct Env *e, void *va, size_t len)
 	// For each page, allocate physical page
 	// page_lookup will determine if page exists (skip allocation if page exists)
 	// If page does not exist, alloc a physical page and pass in page_insert
-	Struct PageInfo *page;
+	struct PageInfo *page;
 	pte_t *store = NULL;
 	
 	for (uint32_t i = 0; i < num_pages; ++i) {
-		if (page_lookup(e -> env_pgdir, i, &store) == NULL) {
+		if (page_lookup(e -> env_pgdir, (void *) (i * PGSIZE + virtual_address), &store) == NULL) {
 			if (!(page = page_alloc(0))) {
 				panic("Page allocation failed");
 			}
@@ -368,7 +368,7 @@ load_icode(struct Env *e, uint8_t *binary)
 	// Load segments
 	for (; program_header < end_program_header; ++program_header) {
 		if (program_header -> p_type == ELF_PROG_LOAD) {
-			region_alloc(e, (void *) program_header -> p_va, ph -> p_memsz);
+			region_alloc(e, (void *) program_header -> p_va, program_header -> p_memsz);
 			memset((void *) program_header -> p_va, 0, program_header -> p_memsz);
 			memcpy((void *) program_header -> p_va, binary + program_header -> p_offset, program_header -> p_filesz);
 		}
@@ -522,7 +522,22 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
+	if (!curenv) {
+		panic("No current environment");
+	} else {
+		if (curenv != e) {
+			if (curenv && curenv -> env_status == ENV_RUNNING) {
+				curenv -> env_status = ENV_RUNNABLE;
+			}
 
-	panic("env_run not yet implemented");
+			curenv = e;
+			curenv -> env_status = ENV_RUNNING;
+			curenv -> env_runs++;
+
+			lcr3(PADDR(curenv -> env_pgdir));
+		}
+	}
+
+	env_pop_tf(&curenv -> env_tf);
 }
 
