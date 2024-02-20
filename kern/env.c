@@ -280,6 +280,24 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	uintptr_t virtual_address = ROUNDDOWN((uintptr_t) va, PGSIZE);
+	uintptr_t upper_address = ROUNDUP((uintptr_t) (va + len), PGSIZE);
+
+	// For each page, allocate physical page
+	// page_lookup will determine if page exists (skip allocation if page exists)
+	// If page does not exist, alloc a physical page and pass in page_insert
+	Struct PageInfo *page;
+	pte_t *store = NULL;
+	
+	for (uintptr_t i = virtual_address; i < upper_address; i += PGSIZE) {
+		if (page_lookup(e -> env_pgdir, i, &store) == NULL) {
+			if ((page = page_alloc(0)) == NULL) {
+				panic("Page allocation failed");
+			}
+
+			page_insert(e -> env_pgdir, page, i, PTE_W | PTE_U);
+		}
+	}
 }
 
 //
