@@ -189,9 +189,9 @@ env_setup_vm(struct Env *e)
 	// e should be set to allocated page
 	// Addresses above UTOP should be identical
 	// Copy kernel page directory entries to environment page directory entries (above UTOP)
-	e -> env_pgdir = page2kva(p);
-	memcpy(e -> env_pgdir, kern_pgdir, PGSIZE);
+	e -> env_pgdir = (pde_t*) page2kva(p);
 	p -> pp_ref++;
+	memcpy(e -> env_pgdir, kern_pgdir, PGSIZE);
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
@@ -282,6 +282,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   (Watch out for corner-cases!)
 	uintptr_t virtual_address = ROUNDDOWN((uintptr_t) va, PGSIZE);
 	uintptr_t upper_address = ROUNDUP((uintptr_t) (va + len), PGSIZE);
+	uintptr_t num_pages = (upper_address - virtual_address) / PGSIZE;
 
 	// For each page, allocate physical page
 	// page_lookup will determine if page exists (skip allocation if page exists)
@@ -289,13 +290,13 @@ region_alloc(struct Env *e, void *va, size_t len)
 	Struct PageInfo *page;
 	pte_t *store = NULL;
 	
-	for (uintptr_t i = virtual_address; i < upper_address; i += PGSIZE) {
+	for (uint32_t i = 0; i < num_pages; ++i) {
 		if (page_lookup(e -> env_pgdir, i, &store) == NULL) {
-			if ((page = page_alloc(0)) == NULL) {
+			if (!(page = page_alloc(0))) {
 				panic("Page allocation failed");
 			}
 
-			page_insert(e -> env_pgdir, page, i, PTE_W | PTE_U);
+			page_insert(e -> env_pgdir, page, (void*) (i * PGSIZE + virtual_address), PTE_W | PTE_U);
 		}
 	}
 }
