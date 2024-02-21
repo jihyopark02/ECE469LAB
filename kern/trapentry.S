@@ -53,6 +53,7 @@
 //          Do something like this if the trap includes an error code..
 // HINT 3 : READ Intel's manual to check if the trap includes an error code
 //          or not...
+
 TRAPHANDLER_NOEC(t_divide, T_DIVIDE);
 TRAPHANDLER_NOEC(t_debug, T_DEBUG);
 TRAPHANDLER_NOEC(t_nmi, T_NMI);
@@ -62,8 +63,21 @@ TRAPHANDLER_NOEC(t_bound, T_BOUND);
 TRAPHANDLER_NOEC(t_illop, T_ILLOP);
 TRAPHANDLER_NOEC(t_device, T_DEVICE);
 TRAPHANDLER(t_dblflt, T_DBLFLT);
+
+TRAPHANDLER(t_tss, T_TSS);
+TRAPHANDLER(t_segnp, T_SEGNP);
+TRAPHANDLER(t_stack, T_STACK);
+TRAPHANDLER(t_gpflt, T_GPFLT);
+TRAPHANDLER(t_pgflt, T_PGFLT);
+
+TRAPHANDLER_NOEC(t_fperr, T_FPERR);
+TRAPHANDLER(t_align, T_ALIGN);
+TRAPHANDLER_NOEC(t_mchk, T_MCHK);
+TRAPHANDLER_NOEC(t_simderr, T_SIMDERR);
+
+TRAPHANDLER_NOEC(t_syscall, T_SYSCALL);
+
 /*
  * Lab 3: Your code here for _alltraps
  */
-
 
