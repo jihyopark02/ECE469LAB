@@ -80,4 +80,18 @@ TRAPHANDLER_NOEC(t_syscall, T_SYSCALL);
 /*
  * Lab 3: Your code here for _alltraps
  */
+_alltraps:
+	// Save data segment, save extra segment, and push all general-purpose registers 
+	push %ds
+	push %es
+	pushal
 
+	// Load GD_KD into %ds and %es
+	mov $GD_KD, %eax
+	mov %ax, %ds
+	mov %ax, %es
+
+	// Pass pointer to Trapframe
+	pushl %esp
+
+	call trap
