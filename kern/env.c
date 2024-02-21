@@ -288,17 +288,17 @@ region_alloc(struct Env *e, void *va, size_t len)
 	// page_lookup will determine if page exists (skip allocation if page exists)
 	// If page does not exist, alloc a physical page and pass in page_insert
 	struct PageInfo *page;
-	pte_t *store = NULL;
+	//pte_t *store = NULL;
 	
 	for (uint32_t i = 0; i < num_pages; ++i) {
-		if (page_lookup(e -> env_pgdir, (void *) (i * PGSIZE + virtual_address), &store) == NULL) {
-			if (!(page = page_alloc(0))) {
+	 	//if (!page_lookup(e -> env_pgdir, (void *) (i * PGSIZE + virtual_address), &store)) {
+			if (!(page = page_alloc(ALLOC_ZERO))) {
 				panic("Page allocation failed");
 			}
 
 			void *page_va = (void *) (i * PGSIZE + virtual_address);
 			page_insert(e -> env_pgdir, page, page_va, PTE_W | PTE_U);
-		}
+		//}
 	}
 }
 
