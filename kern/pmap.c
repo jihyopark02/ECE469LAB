@@ -629,10 +629,10 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 
 	for(uintptr_t address = start_addr; address < end_addr; address += PGSIZE) {
 		// pgdir_walk
-		pte_t* pte = pgdir_walk(env->env_pgdir, (void *) va, 0);
+		pte_t* pte = pgdir_walk(env->env_pgdir, (void *) address, 0);
 		// if address is not below ULIM or page table does not give permission
 		// if it exists in the page table.
-		if(address >= ULIM || (*pte | PTE_P) || pte == NULL) {
+		if(address >= ULIM || pte == NULL || ((*pte | (perm | PTE_P)) != *pte)) {
 			user_mem_check_addr = address; // first erroneous virtual address
 			return -E_FAULT;
 		}
