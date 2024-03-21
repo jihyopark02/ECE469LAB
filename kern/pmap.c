@@ -305,31 +305,6 @@ mem_init_mp(void)
 
 }
 
-// Modify mappings in kern_pgdir to support SMP
-//   - Map the per-CPU stacks in the region [KSTACKTOP-PTSIZE, KSTACKTOP)
-//
-static void
-mem_init_mp(void)
-{
-	// Map per-CPU stacks starting at KSTACKTOP, for up to 'NCPU' CPUs.
-	//
-	// For CPU i, use the physical memory that 'percpu_kstacks[i]' refers
-	// to as its kernel stack. CPU i's kernel stack grows down from virtual
-	// address kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP), and is
-	// divided into two pieces, just like the single stack you set up in
-	// mem_init:
-	//     * [kstacktop_i - KSTKSIZE, kstacktop_i)
-	//          -- backed by physical memory
-	//     * [kstacktop_i - (KSTKSIZE + KSTKGAP), kstacktop_i - KSTKSIZE)
-	//          -- not backed; so if the kernel overflows its stack,
-	//             it will fault rather than overwrite another CPU's stack.
-	//             Known as a "guard page".
-	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 4: Your code here:
-
-}
-
 // --------------------------------------------------------------
 // Tracking of physical pages.
 // The 'pages' array has one 'struct PageInfo' entry per physical page.
@@ -372,9 +347,9 @@ void page_init(void) {
   pages[0].pp_link = NULL;
 
   for (i = 1; i < npages_basemem; i++) {
-    pages[i].pp_ref = 0;
-    pages[i].pp_link = page_free_list;
-    page_free_list = &pages[i];
+      pages[i].pp_ref = 0;
+      pages[i].pp_link = page_free_list;
+      page_free_list = &pages[i];
   }
 
   uint32_t free_phys_addr = PADDR(boot_alloc(0));
@@ -385,11 +360,16 @@ void page_init(void) {
     pages[i].pp_link = NULL;
   }
 
+
   for (i = free_phys_addr_idx; i < npages; i++) {
-    pages[i].pp_ref = 0;
-    pages[i].pp_link = page_free_list;
-    page_free_list = &pages[i];
+      pages[i].pp_ref = 0;
+      pages[i].pp_link = page_free_list;
+      page_free_list = &pages[i];
   }
+
+  pages[MPENTRY_PADDR].pp_ref = 1;
+  pages[MPENTRY_PADDR].pp_link = NULL;
+
 }
 
 //
@@ -667,7 +647,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+  int perm = PTE_PCD | PTE_PWT;
+  static uintptr_t temp = MMIOBASE;
+
+  boot_map_region(kern_pgdir, temp, size, pa, perm);
+
+  return &base;
+
 }
 
 static uintptr_t user_mem_check_addr;
