@@ -302,7 +302,8 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
+  int perm = PTE_P | PTE_W;
+  boot_map_region(kern_pgdir, KSTACKTOP, KSTKSIZE + KSTKGAP, PADDR(bootstack), perm);
 }
 
 // --------------------------------------------------------------
@@ -346,30 +347,32 @@ void page_init(void) {
   pages[0].pp_ref = 1; // page 0 is in use
   pages[0].pp_link = NULL;
 
+  int mp_entry_paddr_idx = MPENTRY_PADDR / PGSIZE;
+
   for (i = 1; i < npages_basemem; i++) {
+    if(i != mp_entry_paddr_idx) {
       pages[i].pp_ref = 0;
       pages[i].pp_link = page_free_list;
       page_free_list = &pages[i];
+    }
   }
 
   uint32_t free_phys_addr = PADDR(boot_alloc(0));
   int free_phys_addr_idx = free_phys_addr / PGSIZE;
-
+  
   for (i = npages_basemem; i < free_phys_addr_idx; i++) {
     pages[i].pp_ref = 1;
     pages[i].pp_link = NULL;
   }
-
 
   for (i = free_phys_addr_idx; i < npages; i++) {
       pages[i].pp_ref = 0;
       pages[i].pp_link = page_free_list;
       page_free_list = &pages[i];
   }
-
-  pages[MPENTRY_PADDR].pp_ref = 1;
-  pages[MPENTRY_PADDR].pp_link = NULL;
-
+  
+  pages[mp_entry_paddr_idx].pp_ref = 1;
+  pages[mp_entry_paddr_idx].pp_link = NULL;
 }
 
 //
@@ -647,13 +650,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-  int perm = PTE_PCD | PTE_PWT;
+  int perm = PTE_PCD | PTE_PWT | PTE_P | PTE_W;
   static uintptr_t temp = MMIOBASE;
 
-  boot_map_region(kern_pgdir, temp, size, pa, perm);
+  boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), ROUNDDOWN(pa, PGSIZE), perm);
+  temp += ROUNDUP(size, PGSIZE);
 
-  return &base;
-
+  return (void *)(pa & 0xfff) + temp - ROUNDUP(size, PGSIZE);
 }
 
 static uintptr_t user_mem_check_addr;
