@@ -303,7 +303,11 @@ mem_init_mp(void)
 	//
 	// LAB 4: Your code here:
   int perm = PTE_P | PTE_W;
-  boot_map_region(kern_pgdir, KSTACKTOP, KSTKSIZE + KSTKGAP, PADDR(bootstack), perm);
+  for(int i = 0; i < NCPU; i++) {
+    uintptr_t kstacktop_i = KSTACKTOP - (i * (KSTKSIZE + KSTKGAP));
+    boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), perm);
+  }
+
 }
 
 // --------------------------------------------------------------
@@ -346,7 +350,6 @@ void page_init(void) {
   size_t i;
   pages[0].pp_ref = 1; // page 0 is in use
   pages[0].pp_link = NULL;
-
   int mp_entry_paddr_idx = MPENTRY_PADDR / PGSIZE;
 
   for (i = 1; i < npages_basemem; i++) {
@@ -357,7 +360,7 @@ void page_init(void) {
     }
   }
 
-  uint32_t free_phys_addr = PADDR(boot_alloc(0));
+  uint32_t free_phys_addr = PADDR((void *)boot_alloc(0));
   int free_phys_addr_idx = free_phys_addr / PGSIZE;
   
   for (i = npages_basemem; i < free_phys_addr_idx; i++) {
@@ -371,8 +374,13 @@ void page_init(void) {
       page_free_list = &pages[i];
   }
   
-  pages[mp_entry_paddr_idx].pp_ref = 1;
-  pages[mp_entry_paddr_idx].pp_link = NULL;
+  for (i = 1; i < npages; i++) {
+    if(i == mp_entry_paddr_idx || (i >= PGNUM(IOPHYSMEM) && i < PGNUM(free_phys_addr))) {
+      pages[i].pp_ref = 1;
+      pages[i].pp_link = NULL;
+    }
+  }
+
 }
 
 //
