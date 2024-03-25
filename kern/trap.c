@@ -305,7 +305,7 @@ trap(struct Trapframe *tf)
 	// the interrupt path.
 	assert(!(read_eflags() & FL_IF));
 
-	cprintf("Incoming TRAP frame at %p\n", tf);
+	// cprintf("Incoming TRAP frame at %p\n", tf);
 
 	// 3 = user mode, 1 = kernel mode
 	if ((tf->tf_cs & 3) == 3) {
@@ -313,6 +313,7 @@ trap(struct Trapframe *tf)
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
 		// LAB 4: Your code here.
+		lock_kernel();
 		assert(curenv);
 
 		// Garbage collect if current enviroment is a zombie

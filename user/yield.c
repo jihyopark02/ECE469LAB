@@ -13,5 +13,5 @@ umain(int argc, char **argv)
 		cprintf("Back in environment %08x, iteration %d.\n",
 			thisenv->env_id, i);
 	}
-	cprintf("All done in environment %08x.\n", thisenv->env_id);
+	//cprintf("All done in environment %08x.\n", thisenv->env_id);
 }
