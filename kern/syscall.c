@@ -414,6 +414,9 @@ int32_t syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
   case SYS_page_unmap:
     ret_val = sys_page_unmap((envid_t)a1, (void*)a2);
 	break;
+  case SYS_env_set_pgfault_upcall:
+    ret_val = sys_env_set_pgfault_upcall((envid_t)a1, (void*)a2);
+	break;
   default:
     return -E_INVAL;
   }
