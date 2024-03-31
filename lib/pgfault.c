@@ -24,13 +24,13 @@ void (*_pgfault_handler)(struct UTrapframe *utf);
 void
 set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 {
-	int r;
+	int result;
 
 	if (_pgfault_handler == 0) {
 		// First time through!
 		// LAB 4: Your code here.
-		r = sys_page_alloc(thisenv->env_id, (void*)(UXSTACKTOP - PGSIZE), PTE_U | PTE_P | PTE_W);
-		if(r < 0) {
+		result = sys_page_alloc(thisenv->env_id, (void*)(UXSTACKTOP - PGSIZE), PTE_U | PTE_P | PTE_W);
+		if(result < 0) {
 			panic("set_pgfault_handler not implemented");
 		}
 		if(sys_env_set_pgfault_upcall(thisenv->env_id, _pgfault_upcall) < 0) {
