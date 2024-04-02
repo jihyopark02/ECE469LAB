@@ -25,7 +25,7 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
-	if (!(err & FEC_WR) || !((uvpt[(uint32_t) addr >> PGSHIFT]) & PTE_COW)) {
+	if (!(err & FEC_WR) || !((uvpt[PGNUM(addr)]) & PTE_COW)) {
 		panic("Invalid copy-on-write page\n");
 	}
 	
@@ -41,9 +41,9 @@ pgfault(struct UTrapframe *utf)
 		panic("sys_page_alloc failed %e\n", r);
 	}
 
-	memmove((void *) PFTEMP, (void *) PTE_ADDR(addr), PGSIZE);
+	memmove((void *) PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 
-	if ((r = sys_page_map(0, (void *) PFTEMP, 0, addr, PTE_P | PTE_U | PTE_W)) < 0) {
+	if ((r = sys_page_map(0, (void *) PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
 		panic("sys_page_map failed %e\n", r);
 	}
 
@@ -117,9 +117,8 @@ fork(void)
 	envid_t envid = sys_exofork();
 
 	// CHILD PROCESS
-
 	if (envid < 0) {
-		panic("SYSTEM EXOFORK ERROR");
+		panic("sys_exofork failed");
 	}
 
 	if (envid == 0) {
@@ -129,9 +128,24 @@ fork(void)
 
 	// PARENT PROCESS
 	for (uint32_t address = 0; address < USTACKTOP; address += PGSIZE) {
+		if ((uvpd[PDX(address)] & PTE_P) && (uvpt[PGNUM(address)] & PTE_P) && (uvpt[PGNUM(address)] & PTE_U)) {
+			duppage(envid, PGNUM(address));
+		}
+	}
 
+	if ((sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
+		panic("sys_page_alloc failed\n");
+	}
+
+	if ((sys_env_set_pgfault_upcall(envid, thisenv -> env_pgfault_upcall)) < 0) {
+		panic("sys_env_set_pgfault_upcall failed\n");
+	}
+
+	if ((sys_env_set_status(envid, ENV_RUNNABLE)) < 0) {
+		panic("sys_env_set_status failed\n");
 	}
 	
+	return envid;
 	//panic("fork not implemented");
 }
 
