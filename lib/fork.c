@@ -113,12 +113,14 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
+	// panic("fork not implemented");
+
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
 
 	// CHILD PROCESS
 	if (envid < 0) {
-		panic("sys_exofork failed");
+		panic("sys_exofork failed: %e", envid);
 	}
 
 	if (envid == 0) {
@@ -127,26 +129,27 @@ fork(void)
 	}
 
 	// PARENT PROCESS
-	for (uint32_t address = 0; address < USTACKTOP; address += PGSIZE) {
-		if ((uvpd[PDX(address)] & PTE_P) && (uvpt[PGNUM(address)] & PTE_P) && (uvpt[PGNUM(address)] & PTE_U)) {
+	for (uint32_t address = 0; address <= USTACKTOP; address += PGSIZE) {
+		if ((uvpd[PDX(address)] & PTE_P) == PTE_P && (uvpt[PGNUM(address)] & PTE_P) == PTE_P) {
 			duppage(envid, PGNUM(address));
 		}
 	}
 
-	if ((sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
-		panic("sys_page_alloc failed\n");
+	int r;
+
+	if ((r = sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
+		panic("sys_page_alloc failed: %e\n", r);
 	}
 
-	if ((sys_env_set_pgfault_upcall(envid, thisenv -> env_pgfault_upcall)) < 0) {
-		panic("sys_env_set_pgfault_upcall failed\n");
+	if ((r = sys_env_set_pgfault_upcall(envid, thisenv -> env_pgfault_upcall)) < 0) {
+		panic("sys_env_set_pgfault_upcall failed: %e\n", r);
 	}
 
-	if ((sys_env_set_status(envid, ENV_RUNNABLE)) < 0) {
-		panic("sys_env_set_status failed\n");
+	if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0) {
+		panic("sys_env_set_status failed: %e\n", r);
 	}
 	
 	return envid;
-	//panic("fork not implemented");
 }
 
 // Challenge!
