@@ -661,7 +661,12 @@ mmio_map_region(physaddr_t pa, size_t size)
   int perm = PTE_PCD | PTE_PWT | PTE_P | PTE_W;
   static uintptr_t temp = MMIOBASE;
 
-  boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), ROUNDDOWN(pa, PGSIZE), perm);
+  if (base + ROUNDUP(size, PGSIZE) > MMIOLIM) {
+    panic("mmio_map_region: alloc size too large\n");
+  }
+
+  //boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), ROUNDDOWN(pa, PGSIZE), perm);
+  boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), pa, perm);
   temp += ROUNDUP(size, PGSIZE);
 
   return (void *)(pa & 0xfff) + temp - ROUNDUP(size, PGSIZE);

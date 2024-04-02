@@ -117,7 +117,7 @@ fork(void)
 
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
-	cprintf("envid fork : %e", envid);
+	// cprintf("envid fork : %e", envid);
 	// CHILD PROCESS
 	if (envid < 0) {
 		panic("sys_exofork failed: %d\n", envid);
