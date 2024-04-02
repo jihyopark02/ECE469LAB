@@ -76,7 +76,7 @@ sys_exofork(void)
 	struct Env *env;
 	int result = env_alloc(&env, curenv->env_id); // this should return 0 if successful
 
-	if (result == -E_NO_FREE_ENV || result == -E_NO_MEM) {
+	if (result < 0) {
 		return result;
 	}
 
