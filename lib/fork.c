@@ -25,6 +25,9 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	if (!(err & FEC_WR) || !((uvpt[(uint32_t) addr >> PGSHIFT]) & PTE_COW)) {
+		panic("Invalid copy-on-write page\n");
+	}
 	
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -34,7 +37,21 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 
-	panic("pgfault not implemented");
+	if ((r = sys_page_alloc(0, (void *) PFTEMP, PTE_P | PTE_U | PTE_W)) < 0) {
+		panic("sys_page_alloc failed %e\n", r);
+	}
+
+	memmove((void *) PFTEMP, (void *) PTE_ADDR(addr), PGSIZE);
+
+	if ((r = sys_page_map(0, (void *) PFTEMP, 0, addr, PTE_P | PTE_U | PTE_W)) < 0) {
+		panic("sys_page_map failed %e\n", r);
+	}
+
+	if ((r = sys_page_unmap(0, (void *) PFTEMP)) < 0) {
+		panic("sys_page_unmap failed %e\n", r);
+	}
+
+	//panic("pgfault not implemented");
 }
 
 //
@@ -54,7 +71,25 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	// panic("duppage not implemented");
+
+	void* address = (void *) (pn * PGSIZE);
+	pte_t pte = uvpt[pn];
+
+	if (pte & PTE_W || pte & PTE_COW) {
+		if ((r = sys_page_map(0, address, envid, address, PTE_P | PTE_U | PTE_COW)) < 0) {
+			panic("sys_page_map failed %e\n", r);
+		}
+
+		if ((r = sys_page_map(0, address, 0, address, PTE_P | PTE_U | PTE_COW)) < 0) {
+			panic("sys_page_map failed %e\n", r);
+		}
+	} else {
+		if ((r = sys_page_map(0, address, envid, address, PTE_P | PTE_U)) < 0) {
+			panic("sys_page_map failed %e\n", r);
+		}
+	}
+
 	return 0;
 }
 
@@ -78,8 +113,26 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
+	set_pgfault_handler(pgfault);
+	envid_t envid = sys_exofork();
+
+	// CHILD PROCESS
+
+	if (envid < 0) {
+		panic("SYSTEM EXOFORK ERROR");
+	}
+
+	if (envid == 0) {
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+	// PARENT PROCESS
+	for (uint32_t address = 0; address < USTACKTOP; address += PGSIZE) {
+
+	}
 	
-	panic("fork not implemented");
+	//panic("fork not implemented");
 }
 
 // Challenge!
