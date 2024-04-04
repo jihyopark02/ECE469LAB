@@ -479,10 +479,10 @@ page_fault_handler(struct Trapframe *tf)
 		tf -> tf_esp = (uintptr_t)utf;
 
 		env_run(curenv);
+	} else {
+		cprintf("[%08x] user fault va %08x ip %08x\n", curenv->env_id, fault_va, tf->tf_eip);
+		print_trapframe(tf);
+		env_destroy(curenv);\
 	}
-
-	cprintf("[%08x] user fault va %08x ip %08x\n", curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
 }
 

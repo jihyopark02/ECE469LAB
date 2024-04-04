@@ -385,7 +385,7 @@ load_icode(struct Env *e, uint8_t *binary)
 			region_alloc(e, (void *) program_header -> p_va, program_header -> p_memsz);
 			memset((void *) program_header -> p_va, 0, program_header -> p_memsz);
 			if (program_header -> p_memsz < program_header -> p_filesz) {
-				panic("load_icode failed\n");
+				panic("load_icode: ELF file failed\n");
 			}
 			memcpy((void *) program_header -> p_va, binary + program_header -> p_offset, program_header -> p_filesz);
 		}
@@ -417,8 +417,17 @@ env_create(uint8_t *binary, enum EnvType type)
 	struct Env *env;
 	
 	int result = env_alloc(&env, 0);
-	if (result < 0) {
-		panic("Failed to allocate a new environment");
+	
+	if (result == -E_NO_MEM) {
+		panic("env_create: Not enough memory\n");
+	}
+
+	if (result == -E_NO_FREE_ENV) {
+		panic("env_create: NENV environments were allocated\n");
+	}
+
+	if (env == NULL) {
+		panic("env_create: env is NULL\n");
 	}
 
 	load_icode(env, binary);
@@ -553,17 +562,15 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
-	if (curenv != e) {
-		if (curenv && curenv -> env_status == ENV_RUNNING) {
-			curenv -> env_status = ENV_RUNNABLE;
-		}
-
-		curenv = e;
-		curenv -> env_status = ENV_RUNNING;
-		curenv -> env_runs++;
-
-		lcr3(PADDR(curenv -> env_pgdir));
+	if (curenv && curenv -> env_status == ENV_RUNNING) {
+		curenv -> env_status = ENV_RUNNABLE;
 	}
+
+	curenv = e;
+	curenv -> env_status = ENV_RUNNING;
+	curenv -> env_runs++;
+
+	lcr3(PADDR(curenv -> env_pgdir));
 
 	unlock_kernel();
 	env_pop_tf(&curenv -> env_tf);
