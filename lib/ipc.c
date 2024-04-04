@@ -29,27 +29,21 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	if (pg) {
 		r = sys_ipc_recv(pg);
 	} else {
-		r = sys_ipc_recv((void *) UTOP);
-	}
-
-	if (from_env_store) {
-		if (r < 0) {
-			*from_env_store = 0;
-		} else {
-			*from_env_store = thisenv -> env_ipc_from;
-		}
-	}
-
-	if (perm_store) {
-		if (r < 0) {
-			*perm_store = 0;
-		} else {
-			*perm_store = thisenv -> env_ipc_perm;
-		}
+		r = sys_ipc_recv((void *) -1);
 	}
 
 	if (r < 0) {
+		*from_env_store = 0;
+		*perm_store = 0;
 		return r;
+	}
+
+	if (from_env_store) {
+		*from_env_store = thisenv -> env_ipc_from;
+	}
+
+	if (perm_store) {
+		*perm_store = thisenv -> env_ipc_perm;
 	}
 
 	return thisenv -> env_ipc_value;
@@ -71,8 +65,8 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 
 	int r;
 	
-	if (!pg) {
-		pg = (void *) UTOP;
+	if (pg == NULL) {
+		pg = (void *) -1;
 	}
 
 	while ((r = sys_ipc_try_send(to_env, val, pg, perm)) != 0) {

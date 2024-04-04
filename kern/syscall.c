@@ -361,52 +361,52 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	int r;
 
 	if ((r = envid2env(envid, &env, 0))) {
-		return r;
+		return -E_BAD_ENV;
 	}
 
 	if (!(env -> env_ipc_recving)) {
 		return -E_IPC_NOT_RECV;
 	}
 
-	if ((uint32_t) srcva < UTOP) {
-		if ((uint32_t) srcva % PGSIZE) {
+	uintptr_t src_va = (uintptr_t) srcva;
+
+	if ((src_va < UTOP) && (src_va % PGSIZE)) {
+		return -E_INVAL;
+	}
+
+	if ((src_va < UTOP) && (perm & ~PTE_SYSCALL)) {
+		return -E_INVAL;
+	}
+
+	int set_perm = 0;
+
+	if (src_va < UTOP) {
+		pte_t *pte_store;
+		struct PageInfo *page = page_lookup(curenv -> env_pgdir, srcva, &pte_store);
+
+		if (page == NULL) {
 			return -E_INVAL;
 		}
 
-		if (!(perm & PTE_P) || !(perm & PTE_U) || (perm & ~PTE_SYSCALL)) {
+		if (!(*pte_store & PTE_W) && (perm & PTE_W)) {
 			return -E_INVAL;
 		}
 
-		pte_t* pte;
-		struct PageInfo *page = page_lookup(curenv -> env_pgdir, srcva, &pte);
+		r = page_insert(env -> env_pgdir, page, env -> env_ipc_dstva, perm);
 
-		if (!page) {
-			return -E_INVAL;
-		}
-
-		if (!pte) {
-			return -E_INVAL;
-		}
-
-		if (perm & PTE_W && !(*pte & PTE_W)) {
-			return -E_INVAL;
-		}
-
-		if ((r = page_insert(env -> env_pgdir, page, env -> env_ipc_dstva, perm)) < 0) {
+		if (r < 0) {
 			return r;
 		}
 
-		env -> env_ipc_perm = perm;
-	} else {
-		env -> env_ipc_perm = 0;
+		set_perm = 1;
 	}
 
 	env -> env_ipc_recving = 0;
 	env -> env_ipc_from = curenv -> env_id;
 	env -> env_ipc_value = value;
+	env -> env_ipc_perm = set_perm;
 	env -> env_status = ENV_RUNNABLE;
-	env -> env_tf.tf_regs.reg_eax = 0;
-	
+
 	return 0;
 }
 
@@ -426,18 +426,18 @@ sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
 	// panic("sys_ipc_recv not implemented");
-	if (((uintptr_t) dstva < UTOP) && ((uintptr_t) dstva % PGSIZE)) {
-		return -E_INVAL;
-	}
-
 	if ((uintptr_t) dstva < UTOP) {
+		if ((uintptr_t) dstva % PGSIZE) {
+			return -E_INVAL;
+		}
+
 		curenv -> env_ipc_dstva = dstva;
+	} else {
+		curenv -> env_ipc_dstva = NULL;
 	}
 
-	curenv -> env_ipc_recving = 1;
 	curenv -> env_status = ENV_NOT_RUNNABLE;
-	
-	sys_yield();
+	curenv -> env_ipc_recving = 1;
 
 	return 0;
 }
@@ -469,22 +469,28 @@ int32_t syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
 		return 0;
   case SYS_exofork:
     ret_val = sys_exofork();
-	break;
+		break;
   case SYS_env_set_status:
     ret_val = sys_env_set_status((envid_t)a1, (int)a2);
-	break;
+		break;
   case SYS_page_alloc:
-    ret_val = sys_page_alloc((envid_t)a1, (void*)a2, (int)a3);
-	break;
+    ret_val = sys_page_alloc((envid_t) a1, (void*) a2, (int) a3);
+		break;
   case SYS_page_map:
-    ret_val = sys_page_map((envid_t)a1, (void*)a2, (envid_t)a3, (void*)a4, (int)a5);
-	break;
+    ret_val = sys_page_map((envid_t) a1, (void*) a2, (envid_t) a3, (void*) a4, (int) a5);
+		break;
   case SYS_page_unmap:
-    ret_val = sys_page_unmap((envid_t)a1, (void*)a2);
-	break;
+    ret_val = sys_page_unmap((envid_t) a1, (void*) a2);
+		break;
   case SYS_env_set_pgfault_upcall:
-    ret_val = sys_env_set_pgfault_upcall((envid_t)a1, (void*)a2);
-	break;
+    ret_val = sys_env_set_pgfault_upcall((envid_t) a1, (void*) a2);
+		break;
+	case SYS_ipc_try_send:
+		ret_val = sys_ipc_try_send((uint32_t) a1, (uint32_t) a2, (void *) a3, (unsigned int) a4);
+		break;
+	case SYS_ipc_recv:
+		ret_val = sys_ipc_recv((void *) a1);
+		break;
   default:
     return -E_INVAL;
   }
