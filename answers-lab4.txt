@@ -5,9 +5,19 @@ and linked to run above KERNBASE just like everything else in the kernel, what i
 Why is it necessary in kern/mpentry.S but not in boot/boot.S? In other words, what could go wrong if it were omitted 
 in kern/mpentry.S? Hint: recall the differences between the link address and the load address that we have discussed in Lab 1.
 
+It is necessary in kern/mpentry.S but not in boot/boot.S because the physical address when booting is known and selected at KERNBASE,
+while mpentry.S requires to select the physical address to load based on the constraints that we have with real mode (should run
+above KERNBASE). If it was omitted in kern/mpentry.S, then the physical address that it points to will not be referencing 
+properly in protected mode, leading to accessing the wrong data.
+
 Question 2. It seems that using the big kernel lock guarantees that only one CPU can run the kernel code at a time. 
 Why do we still need separate kernel stacks for each CPU? Describe a scenario in which using a shared 
 kernel stack will go wrong, even with the protection of the big kernel lock.
+
+We still need separate kernel stacks for each CPU in order to prevent one process to interrupt or overwrite another.
+A good scenario would be when there are 2 CPUs, and CPU 1 is trying to complete a kernel function and CPU 2 triggers an interrupt.
+While CPU 1 is trying to complete, it will be interrupted by CPU 2, resulting in halting the kernel function and switching to CPU 2.
+Even with the protection of the big kernel lock, this action could result in overwriting one process, and executions being interfered.
 
 Question 3: In your implementation of env_run() you should have called lcr3(). Before and after the call to lcr3(), 
 your code makes references (at least it should) to the variable e, the argument to env_run. Upon loading the %cr3 register, 
@@ -15,5 +25,12 @@ the addressing context used by the MMU is instantly changed. But a virtual addre
 given address context–the address context specifies the physical address to which the virtual address maps. 
 Why can the pointer e be dereferenced both before and after the addressing switch?
 
+??
+
 Question 4: Whenever the kernel switches from one environment to another, it must ensure the old environment’s 
 registers are saved so they can be restored properly later. Why? Where does this happen?
+
+It must ensure the old environment's registers are saved so that when you switch environments and schedule one to run again,
+you are able to run that environment from where you left off, and this is crucial for maintaining the consistency
+of each environment's execution state. This happens in trapentry.S where you save the data segment, extra segment, and push all general-purpose registers
+and in env_run() where we call env_pop_tf to restore the environment's registers.
