@@ -25,7 +25,13 @@ the addressing context used by the MMU is instantly changed. But a virtual addre
 given address context–the address context specifies the physical address to which the virtual address maps. 
 Why can the pointer e be dereferenced both before and after the addressing switch?
 
-??
+The pointer e can be dereferenced both before and after the addressing switch because of how the MMU is designed,
+since it allows the kernel to access environment and process data in different contexts. Since the environment is part
+of the kernel address space, this means that the virtual address of the environment e points to the same physical location.
+This means that regardless of the address space, the environment e will have the same address due to the mapping. This can
+be thought of as a global mapping since virtual address of e will point to the same physical location no matter the page/process
+that is active. The MMU address translation ensures that the necessary address will always point to e, but other translations
+that do not affect the environments can still change.
 
 Question 4: Whenever the kernel switches from one environment to another, it must ensure the old environment’s 
 registers are saved so they can be restored properly later. Why? Where does this happen?
