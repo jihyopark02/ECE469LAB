@@ -37,17 +37,17 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 
-	if ((r = sys_page_alloc(0, (void *) PFTEMP, PTE_P | PTE_U | PTE_W)) < 0) {
+	if ((r = sys_page_alloc(sys_getenvid(), (void *) PFTEMP, PTE_P | PTE_U | PTE_W)) < 0) {
 		panic("sys_page_alloc failed %e\n", r);
 	}
 
 	memmove((void *) PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 
-	if ((r = sys_page_map(0, (void *) PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
+	if ((r = sys_page_map(sys_getenvid(), (void *) PFTEMP, sys_getenvid(), ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) < 0) {
 		panic("sys_page_map failed %e\n", r);
 	}
 
-	if ((r = sys_page_unmap(0, (void *) PFTEMP)) < 0) {
+	if ((r = sys_page_unmap(sys_getenvid(), (void *) PFTEMP)) < 0) {
 		panic("sys_page_unmap failed %e\n", r);
 	}
 

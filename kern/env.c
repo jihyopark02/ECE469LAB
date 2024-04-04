@@ -384,6 +384,9 @@ load_icode(struct Env *e, uint8_t *binary)
 		if (program_header -> p_type == ELF_PROG_LOAD) {
 			region_alloc(e, (void *) program_header -> p_va, program_header -> p_memsz);
 			memset((void *) program_header -> p_va, 0, program_header -> p_memsz);
+			if (program_header -> p_memsz < program_header -> p_filesz) {
+				panic("load_icode failed\n");
+			}
 			memcpy((void *) program_header -> p_va, binary + program_header -> p_offset, program_header -> p_filesz);
 		}
 	}

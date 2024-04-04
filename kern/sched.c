@@ -38,11 +38,13 @@ sched_yield(void)
 	for(int i = 0; i < NENV; i++) {
 		if (envs[(startIndex + i) % NENV].env_status == ENV_RUNNABLE) {
 			env_run(&envs[(startIndex + i) % NENV]);
+			// return;
 		}
 	}
 
 	if(curenv && curenv->env_status == ENV_RUNNING) {
 		env_run(curenv);
+		// return;
 	}
 	
 	//env_run(idle);

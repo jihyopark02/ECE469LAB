@@ -381,6 +381,23 @@ void page_init(void) {
     }
   }
 
+  // physaddr_t free_address = PADDR((void *) boot_alloc(0));
+  // size_t free_address_pgnum = PGNUM(free_address);
+
+  // for (int i = 0; i < npages; ++i) {
+  //     if (i == 0 || i == MPENTRY_PADDR / PGSIZE) {
+  //         pages[i].pp_link = NULL;
+  //         pages[i].pp_ref = 1;
+  //     } else if ((i >= PGNUM(IOPHYSMEM)) && (i < free_address_pgnum)) {
+  //         pages[i].pp_link = NULL;
+  //         pages[i].pp_ref = 1;
+  //     } else {
+  //         pages[i].pp_link = page_free_list;
+  //         pages[i].pp_ref = 0;
+  //         page_free_list = &pages[i];
+  //     }
+  // }
+
 }
 
 //
@@ -658,18 +675,31 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-  int perm = PTE_PCD | PTE_PWT | PTE_P | PTE_W;
-  static uintptr_t temp = MMIOBASE;
+  // int perm = PTE_PCD | PTE_PWT | PTE_P | PTE_W;
+  // static uintptr_t temp = MMIOBASE;
 
-  if (base + ROUNDUP(size, PGSIZE) > MMIOLIM) {
-    panic("mmio_map_region: alloc size too large\n");
-  }
+  // if (base + ROUNDUP(size, PGSIZE) > MMIOLIM) {
+  //   panic("mmio_map_region: alloc size too large\n");
+  // }
 
-  //boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), ROUNDDOWN(pa, PGSIZE), perm);
-  boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), pa, perm);
-  temp += ROUNDUP(size, PGSIZE);
+  // //boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), ROUNDDOWN(pa, PGSIZE), perm);
+  // boot_map_region(kern_pgdir, temp, ROUNDUP(size, PGSIZE), pa, perm);
+  // temp += ROUNDUP(size, PGSIZE);
 
-  return (void *)(pa & 0xfff) + temp - ROUNDUP(size, PGSIZE);
+  // return (void *)(pa & 0xfff) + temp - ROUNDUP(size, PGSIZE);
+  size_t new_size = ROUNDUP(size, PGSIZE);
+
+	if ((base + new_size) > MMIOLIM) {
+		panic("mmio_map_region: Allocation bounds exceeded\n");
+	}
+
+	int perm = PTE_PCD | PTE_PWT | PTE_W;
+	boot_map_region(kern_pgdir, base, new_size, pa, perm);
+
+	void* ret = (void *) base;
+	base += new_size;
+
+	return ret;
 }
 
 static uintptr_t user_mem_check_addr;

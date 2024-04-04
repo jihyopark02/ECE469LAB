@@ -361,7 +361,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	int r;
 
 	if ((r = envid2env(envid, &env, 0))) {
-		return -E_BAD_ENV;
+		return r;
 	}
 
 	if (!(env -> env_ipc_recving)) {
@@ -377,9 +377,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 			return -E_INVAL;
 		}
 
-		struct PageInfo *page;
 		pte_t* pte;
-		page = page_lookup(curenv -> env_pgdir, srcva, &pte);
+		struct PageInfo *page = page_lookup(curenv -> env_pgdir, srcva, &pte);
 
 		if (!page) {
 			return -E_INVAL;
@@ -465,6 +464,9 @@ int32_t syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
   case SYS_env_destroy:
     ret_val = sys_env_destroy((envid_t)a1);
     break;
+	case SYS_yield:
+		sys_yield();
+		return 0;
   case SYS_exofork:
     ret_val = sys_exofork();
 	break;
