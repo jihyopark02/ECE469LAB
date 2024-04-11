@@ -33,8 +33,14 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	}
 
 	if (r < 0) {
-		*from_env_store = 0;
-		*perm_store = 0;
+		if (from_env_store) {
+			*from_env_store = 0;
+		}
+		
+		if (perm_store) {
+			*perm_store = 0;
+		}
+		
 		return r;
 	}
 
