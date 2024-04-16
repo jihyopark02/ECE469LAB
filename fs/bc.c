@@ -52,6 +52,20 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 
+	uint32_t pg_or_dsc = ROUNDDOWN(addr, PGSIZE);
+
+	int r_alloc = sys_page_alloc(thisenv->env_id, pg_or_dsc, PTE_W | PTE_U);
+
+	if (r_alloc < 0) {
+		panic("sys_page_alloc FAILED");
+	}
+
+	int r_ide = ide_read(blockno * (BLKSIZE / SECTSIZE), pg_or_dsc, BLKSIZE / SECTSIZE);
+
+	if (r_ide < 0) {
+		panic("ide_read FAILED");
+	}
+
 	// Clear the dirty bit for the disk block page since we just read the
 	// block from disk
 	if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)
@@ -80,6 +94,18 @@ flush_block(void *addr)
 		panic("flush_block of bad va %08x", addr);
 
 	// LAB 5: Your code here.
+
+	uint32_t pg_or_dsc = ROUNDDOWN(addr, PGSIZE);
+
+	// If the block is not in the block cache or is not dirty, does
+	// nothing.
+	if (!(va_is_mapped(addr)) || !(va_is_dirty(addr))) {
+		return;
+	}
+
+	// Flush the contents of the block containing VA out to disk if
+	// necessary, then clear the PTE_D bit using sys_page_map.
+	int r_block = 
 	panic("flush_block not implemented");
 }
 
