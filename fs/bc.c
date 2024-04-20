@@ -52,15 +52,15 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 
-	uint32_t pg_or_dsc = ROUNDDOWN(addr, PGSIZE);
+	void *pg_or_dsc = (void*)ROUNDDOWN(addr, PGSIZE);
 
-	int r_alloc = sys_page_alloc(thisenv->env_id, pg_or_dsc, PTE_W | PTE_U);
+	int r_alloc = sys_page_alloc(0, pg_or_dsc, PTE_W | PTE_U | PTE_P);
 
 	if (r_alloc < 0) {
 		panic("sys_page_alloc FAILED");
 	}
 
-	int r_ide = ide_read(blockno * (BLKSIZE / SECTSIZE), pg_or_dsc, BLKSIZE / SECTSIZE);
+	int r_ide = ide_read(blockno * BLKSECTS, pg_or_dsc, BLKSECTS);
 
 	if (r_ide < 0) {
 		panic("ide_read FAILED");
@@ -68,14 +68,16 @@ bc_pgfault(struct UTrapframe *utf)
 
 	// Clear the dirty bit for the disk block page since we just read the
 	// block from disk
-	if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)
+	if ((r = sys_page_map(0, pg_or_dsc, 0, pg_or_dsc, uvpt[PGNUM(pg_or_dsc)] & PTE_SYSCALL)) < 0) {
 		panic("in bc_pgfault, sys_page_map: %e", r);
+	}
 
 	// Check that the block we read was allocated. (exercise for
 	// the reader: why do we do this *after* reading the block
 	// in?)
-	if (bitmap && block_is_free(blockno))
+	if (bitmap && block_is_free(blockno)) {
 		panic("reading free block %08x\n", blockno);
+	}
 }
 
 // Flush the contents of the block containing VA out to disk if
@@ -99,17 +101,23 @@ flush_block(void *addr)
 
 	// If the block is not in the block cache or is not dirty, does
 	// nothing.
-	if (!(va_is_mapped(addr)) || !(va_is_dirty(addr))) {
+	if (!(va_is_mapped(pg_or_dsc)) || !(va_is_dirty(pg_or_dsc))) {
 		return;
 	}
 
 	// Flush the contents of the block containing VA out to disk if
 	// necessary, then clear the PTE_D bit using sys_page_map.
 	int r_block = ide_write(blockno * BLKSECTS, pg_or_dsc, BLKSECTS);
-	
+	if(r_block < 0) {
+		panic("ide_write FAILED");
+	}
+
 	int result = sys_page_map(0, pg_or_dsc, 0, pg_or_dsc, uvpt[PGNUM(pg_or_dsc)] & PTE_SYSCALL);
-	
-	panic("flush_block not implemented");
+	if(result < 0) {
+		panic("sys_page_map FAILED");
+	}
+
+	//panic("flush_block not implemented");
 }
 
 // Test that the block cache works, by smashing the superblock and

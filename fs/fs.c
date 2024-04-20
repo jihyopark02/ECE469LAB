@@ -62,7 +62,8 @@ alloc_block(void)
 	// super->s_nblocks blocks in the disk altogether.
 
 	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+	
+	//panic("alloc_block not implemented");
 	return -E_NO_DISK;
 }
 
