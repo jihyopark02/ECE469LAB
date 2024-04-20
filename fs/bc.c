@@ -95,7 +95,7 @@ flush_block(void *addr)
 
 	// LAB 5: Your code here.
 
-	uint32_t pg_or_dsc = ROUNDDOWN(addr, PGSIZE);
+	void *pg_or_dsc = (void*)ROUNDDOWN(addr, PGSIZE);
 
 	// If the block is not in the block cache or is not dirty, does
 	// nothing.
@@ -105,7 +105,10 @@ flush_block(void *addr)
 
 	// Flush the contents of the block containing VA out to disk if
 	// necessary, then clear the PTE_D bit using sys_page_map.
-	int r_block = 
+	int r_block = ide_write(blockno * BLKSECTS, pg_or_dsc, BLKSECTS);
+	
+	int result = sys_page_map(0, pg_or_dsc, 0, pg_or_dsc, uvpt[PGNUM(pg_or_dsc)] & PTE_SYSCALL);
+	
 	panic("flush_block not implemented");
 }
 
