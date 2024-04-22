@@ -25,7 +25,7 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
-	if (!(err & FEC_WR) || !((uvpt[PGNUM(addr)]) & PTE_COW)) {
+	if (((err & FEC_WR) == 0) || (((uvpt[PGNUM(addr)]) & PTE_COW) == 0)) {
 		panic("Invalid copy-on-write page\n");
 	}
 	

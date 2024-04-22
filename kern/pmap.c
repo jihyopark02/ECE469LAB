@@ -195,8 +195,9 @@ void mem_init(void) {
   // Your code goes here:
   int perm = PTE_P; // read only
 
+  // THIS WAS CAUSING AN ISSUE FOR LAB5 EX5, perm | PTE_U
   boot_map_region(kern_pgdir, UPAGES, sizeof(struct PageInfo) * npages,
-                  PADDR(pages), perm);
+                  PADDR(pages), perm | PTE_U);
   boot_map_region(kern_pgdir, (uintptr_t) pages, ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE), PADDR(pages), PTE_P | PTE_W);
   // boot_map_region(kern_pgdir, (uintptr_t) page2kva(pages), PGSIZE,
   // PADDR(pages), perm2);

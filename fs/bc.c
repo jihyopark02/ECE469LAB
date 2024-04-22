@@ -97,13 +97,13 @@ flush_block(void *addr)
 
 	// LAB 5: Your code here.
 
-	void *pg_or_dsc = (void*)ROUNDDOWN(addr, PGSIZE);
-
 	// If the block is not in the block cache or is not dirty, does
 	// nothing.
-	if (!(va_is_mapped(pg_or_dsc)) || !(va_is_dirty(pg_or_dsc))) {
+	if (!va_is_mapped(addr) || !va_is_dirty(addr)) {
 		return;
 	}
+
+	void *pg_or_dsc = (void*)ROUNDDOWN(addr, PGSIZE);
 
 	// Flush the contents of the block containing VA out to disk if
 	// necessary, then clear the PTE_D bit using sys_page_map.
