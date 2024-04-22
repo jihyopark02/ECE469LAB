@@ -54,7 +54,7 @@ bc_pgfault(struct UTrapframe *utf)
 
 	void *pg_or_dsc = (void*)ROUNDDOWN(addr, PGSIZE);
 
-	int r_alloc = sys_page_alloc(0, pg_or_dsc, PTE_W | PTE_U | PTE_P);
+	int r_alloc = sys_page_alloc(thisenv->env_id, pg_or_dsc, PTE_SYSCALL);
 
 	if (r_alloc < 0) {
 		panic("sys_page_alloc FAILED");
