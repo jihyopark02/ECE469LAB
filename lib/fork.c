@@ -75,18 +75,23 @@ duppage(envid_t envid, unsigned pn)
 
 	void* address = (void *) (pn * PGSIZE);
 	pte_t pte = uvpt[pn];
+	envid_t s_envid = sys_getenvid();
 
-	if (pte & PTE_W || pte & PTE_COW) {
-		if ((r = sys_page_map(0, address, envid, address, PTE_P | PTE_U | PTE_COW)) < 0) {
-			panic("sys_page_map failed %e\n", r);
+	if (pte & PTE_SHARE) {
+		if ((r = sys_page_map(s_envid, address, envid, address, pte & PTE_SYSCALL)) < 0) {
+			panic("duppage: sys_page_map failed %e\n", r);
+		}
+	} else if (pte & PTE_W || pte & PTE_COW) {
+		if ((r = sys_page_map(s_envid, address, envid, address, PTE_COW | PTE_U | PTE_P)) < 0) {
+			panic("duppage: sys_page_map failed %e\n", r);
 		}
 
-		if ((r = sys_page_map(0, address, 0, address, PTE_P | PTE_U | PTE_COW)) < 0) {
-			panic("sys_page_map failed %e\n", r);
+		if ((r = sys_page_map(s_envid, address, s_envid, address, PTE_COW | PTE_U | PTE_P)) < 0) {
+			panic("duppage: sys_page_map failed %e\n", r);
 		}
 	} else {
-		if ((r = sys_page_map(0, address, envid, address, PTE_P | PTE_U)) < 0) {
-			panic("sys_page_map failed %e\n", r);
+		if ((r = sys_page_map(s_envid, address, envid, address, PTE_COW | PTE_U | PTE_P)) < 0) {
+			panic("duppage: sys_page_map failed %e\n", r);
 		}
 	}
 
