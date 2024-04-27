@@ -322,7 +322,7 @@ copy_shared_pages(envid_t child)
 				void* addr = (void *) (pn * PGSIZE);
 
 				if ((r = sys_page_map(sys_getenvid(), addr, child, addr, pte & PTE_SYSCALL)) < 0) {
-					return r;
+					panic("copy_shared_pages: invalid sys_page_map %e\n", r);
 				}
 			}
 		}

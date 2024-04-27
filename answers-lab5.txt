@@ -1,0 +1,5 @@
+Question 1. Do you have to do anything else to ensure that this I/O privilege setting is saved 
+and restored properly when you subsequently switch from one environment to another? Why?
+Answer: To ensure that the I/O privilege setting is saved and restored properly, it must be saved. 
+The state of the EFLAGS register should be saved when switching enviroments because the IOPL flag 
+is stored in the EFLAGS register.
